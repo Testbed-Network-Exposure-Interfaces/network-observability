@@ -13,6 +13,9 @@ _shutdown = threading.Event()
 signal.signal(signal.SIGTERM, lambda *_: _shutdown.set())
 signal.signal(signal.SIGINT, lambda *_: _shutdown.set())
 
+# Grafana 12.x serves v0alpha1, v1beta1, v2alpha1 and v2beta1 (no v1). v1beta1 is its preferred version.
+DASHBOARD_API_VERSION = "dashboard.grafana.app/v1beta1"
+
 
 def fetch_ue_ips(slice_id: str, api_url: str, auth: HTTPBasicAuth) -> dict[str, str] | None:
     """Static IPv4 of each UE associated with the slice, keyed by ue_id (IMSI). UEs without one are left out."""
@@ -139,7 +142,7 @@ def update_dashboards(ue_ips: set[str], slice_id: str, api_url: str, auth: tuple
             slice_id_set = set_variable(spec, "SLICE_ID", slice_id)
             if not (ue_ips_set or slice_id_set):
                 continue
-            dashboard["apiVersion"] = "dashboard.grafana.app/v1"
+            dashboard["apiVersion"] = DASHBOARD_API_VERSION
             dashboard["kind"] = "Dashboard"
             # metadata.resourceVersion is sent back, so a concurrent edit fails with 409 and is retried next iteration
             r = requests.put(f"{api_url}/{name}", json=dashboard, auth=auth, timeout=10)
@@ -169,7 +172,7 @@ def main():
     probe_imsis = [i.strip() for i in os.getenv("PROBER_IMSIS", "").split(",") if i.strip()]
 
     grafana_namespace = os.getenv("GRAFANA_NAMESPACE", "default")
-    dashboards_api = f"{os.getenv('GRAFANA_HOST').rstrip('/')}/apis/dashboard.grafana.app/v1/namespaces/{grafana_namespace}/dashboards"
+    dashboards_api = f"{os.getenv('GRAFANA_HOST').rstrip('/')}/apis/{DASHBOARD_API_VERSION}/namespaces/{grafana_namespace}/dashboards"
     grafana_auth = (os.getenv("GRAFANA_USER"), os.getenv("GRAFANA_PASS"))
     logger.info("Starting slice-poller — interval %ds, prober config: %s, probed IMSIs: %s, dashboards: %s [slice_id=%s]",
                 interval, prober_config_path, probe_imsis or "none", dashboards_api, slice_id)

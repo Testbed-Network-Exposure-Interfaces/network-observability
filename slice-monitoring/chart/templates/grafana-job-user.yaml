@@ -13,7 +13,7 @@ spec:
       initContainers:
         - name: wait-for-grafana
           image: curlimages/curl:8.18.0
-          command: ["sh", "-c", "until curl -sf {{ $url }}/api/health; do echo 'Grafana not ready.'; sleep 5; done"]
+          command: ["sh", "-c", "until curl -sf --connect-timeout 2 --max-time 5 {{ $url }}/api/health; do echo 'Grafana not ready.'; sleep 5; done"]
       containers:
         - name: create-additional-grafana-user
           image: curlimages/curl:8.18.0

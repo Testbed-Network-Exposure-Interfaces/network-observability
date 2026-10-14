@@ -10,13 +10,14 @@ spec:
   source:
     repoURL: ghcr.io/migas77
     chart: slice-monitoring
-    targetRevision: 0.1.0
+    targetRevision: 0.1.1
     helm:
       values: |
-        sliceId: %s
+        sliceId: "%s"
         prober:
-          # Quoted strings; empty list means no prober targets
-          probeIMSIs: %s
+          # Comma-separated IMSIs (e.g. 001010000000001,001010000000002), empty means no prober targets.
+          # Kept as one quoted string: the chart joins the list with "," and the slice-poller splits it again.
+          probeIMSIs: ["%s"]
           config:
             icmp:
               # defaults: 1s, 800ms, 6, 56

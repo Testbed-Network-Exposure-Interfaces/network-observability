@@ -55,7 +55,7 @@ prober:
 grafana:
   image:
     repository: grafana/grafana
-    # >= 12 is required for the dashboard.grafana.app/v1 API used by the slice-poller
+    # >= 12 is required for the dashboard.grafana.app/v1beta1 API used by the slice-poller
     tag: "12.4.13"
     pullPolicy: IfNotPresent
   port: 3000
