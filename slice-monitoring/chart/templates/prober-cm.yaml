@@ -1,0 +1,13 @@
+{{- $prober := dict "ctx" . "component" "prober" }}
+# Base network_exporter config: seeds the prober until the slice-poller writes the slice targets
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "slice-monitoring.componentName" $prober }}-base
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "slice-monitoring.labels" $prober | nindent 4 }}
+data:
+  network_exporter.yml: |
+    {{- toYaml .Values.prober.config | nindent 4 }}
+    targets: []

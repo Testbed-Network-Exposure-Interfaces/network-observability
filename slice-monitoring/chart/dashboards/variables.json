@@ -1,0 +1,47 @@
+{
+  "uid": "slice-variables",
+  "title": "Variables",
+  "description": "Dummy dashboard showing the SLICE_ID and UE_IPS variables written by the slice-poller",
+  "tags": ["slice-monitoring"],
+  "editable": true,
+  "schemaVersion": 41,
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "SLICE_ID",
+        "label": "Slice ID",
+        "type": "textbox",
+        "query": "",
+        "current": { "selected": false, "text": "", "value": "" },
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "UE_IPS",
+        "label": "UE IPs",
+        "type": "textbox",
+        "query": "",
+        "current": { "selected": false, "text": "", "value": "" },
+        "options": [],
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "SLICE_ID",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 0 },
+      "options": { "mode": "markdown", "content": "`${SLICE_ID:raw}`" }
+    },
+    {
+      "id": 2,
+      "type": "text",
+      "title": "UE_IPS",
+      "gridPos": { "h": 4, "w": 16, "x": 8, "y": 0 },
+      "options": { "mode": "markdown", "content": "`${UE_IPS:raw}`" }
+    }
+  ]
+}

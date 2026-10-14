@@ -1,0 +1,26 @@
+{{- $grafana := dict "ctx" . "component" "grafana" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "slice-monitoring.componentName" $grafana }}-dashboards
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "slice-monitoring.labels" $grafana | nindent 4 }}
+data:
+  provider.yaml: |
+    apiVersion: 1
+    providers:
+      - name: slice
+        orgId: 1
+        folder: ""
+        type: file
+        disableDeletion: false
+        editable: true
+        # the slice-poller rewrites the UE_IPS variable of these dashboards through the API
+        allowUiUpdates: true
+        options:
+          path: /var/lib/grafana/dashboards
+  {{- range $path, $_ := .Files.Glob "dashboards/*.json" }}
+  {{ base $path }}: |
+    {{- $.Files.Get $path | nindent 4 }}
+  {{- end }}

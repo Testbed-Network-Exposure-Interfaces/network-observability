@@ -1,0 +1,17 @@
+{{- $grafana := dict "ctx" . "component" "grafana" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "slice-monitoring.componentName" $grafana }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "slice-monitoring.labels" $grafana | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.grafana.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "slice-monitoring.selectorLabels" $grafana | nindent 4 }}

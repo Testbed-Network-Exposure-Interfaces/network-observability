@@ -1,0 +1,15 @@
+{{- $grafana := dict "ctx" . "component" "grafana" }}
+{{- $name := printf "%s-user" (include "slice-monitoring.componentName" $grafana) }}
+{{- /* Reuse the existing password, the Grafana user is only created once with it */}}
+{{- $password := dig "data" "password" "" (lookup "v1" "Secret" .Values.namespace $name) | default (randAlphaNum 32 | b64enc) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "slice-monitoring.labels" $grafana | nindent 4 }}
+type: Opaque
+data:
+  username: {{ "extrauser" | b64enc }}
+  password: {{ $password }}

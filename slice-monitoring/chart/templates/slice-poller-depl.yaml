@@ -1,0 +1,101 @@
+{{- if not .Values.sliceId }}
+  {{ fail ".Values.sliceId is required but not set" }}
+{{- end }}
+{{- range .Values.prober.probeIMSIs }}
+  {{- if not (kindIs "string" .) }}
+    {{ fail (printf ".Values.prober.probeIMSIs entries must be quoted strings, got %v" .) }}
+  {{- end }}
+{{- end }}
+{{- $poller := dict "ctx" . "component" "slice-poller" }}
+{{- $prober := dict "ctx" . "component" "prober" }}
+{{- $grafana := dict "ctx" . "component" "grafana" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slice-monitoring.componentName" $poller }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "slice-monitoring.labels" $poller | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # not strictly required (podAffinity keeps it on the RWO volume's node); avoids two pollers writing at once
+  selector:
+    matchLabels:
+      {{- include "slice-monitoring.selectorLabels" $poller | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "slice-monitoring.labels" $poller | nindent 8 }}
+    spec:
+      # Same node as the prober (shared ReadWriteOnce volume). Also makes the prober the volume's first consumer,
+      # so prober.nodeSelector decides where the volume is created.
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  {{- include "slice-monitoring.selectorLabels" $prober | nindent 18 }}
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+      containers:
+        - name: slice-poller
+          image: "{{ .Values.slicePoller.image.repository }}:{{ .Values.slicePoller.image.tag }}"
+          imagePullPolicy: {{ .Values.slicePoller.image.pullPolicy }}
+          env:
+            - name: SLICE_MANAGER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.slicePoller.sliceManagerSecret }}
+                  key: sliceManagerUrl
+            - name: SLICE_MANAGER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.slicePoller.sliceManagerSecret }}
+                  key: sliceManagerUsername
+            - name: SLICE_MANAGER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.slicePoller.sliceManagerSecret }}
+                  key: sliceManagerPassword
+            - name: SLICE_ID
+              value: {{ .Values.sliceId | quote }}
+            - name: POLL_INTERVAL_SECONDS
+              value: {{ .Values.slicePoller.pollIntervalSeconds | default 30 | quote }}
+            - name: PROBER_BASE_CONFIG
+              value: /base/network_exporter.yml
+            - name: PROBER_CONFIG_PATH
+              value: /config/network_exporter.yml
+            - name: PROBER_SOURCE_IP
+              value: {{ .Values.prober.sourceIp | quote }}
+            - name: PROBER_IMSIS
+              value: {{ join "," .Values.prober.probeIMSIs | quote }}
+            - name: GRAFANA_HOST
+              value: http://{{ include "slice-monitoring.componentName" $grafana }}:{{ .Values.grafana.port }}
+            - name: GRAFANA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "slice-monitoring.componentName" $grafana }}-user
+                  key: username
+            - name: GRAFANA_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "slice-monitoring.componentName" $grafana }}-user
+                  key: password
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: base
+              mountPath: /base
+          resources:
+            {{- toYaml .Values.slicePoller.resources | nindent 12 }}
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: {{ include "slice-monitoring.componentName" $prober }}-config
+        - name: base
+          configMap:
+            name: {{ include "slice-monitoring.componentName" $prober }}-base

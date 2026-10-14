@@ -1,0 +1,69 @@
+{{- $prober := dict "ctx" . "component" "prober" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slice-monitoring.componentName" $prober }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "slice-monitoring.labels" $prober | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # RWO volume (single node) + hostNetwork port: old pod must go before the new one starts
+  selector:
+    matchLabels:
+      {{- include "slice-monitoring.selectorLabels" $prober | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "slice-monitoring.labels" $prober | nindent 8 }}
+    spec:
+      hostNetwork: {{ .Values.prober.hostNetwork }}
+      {{- with .Values.prober.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        # network_exporter fails to start without a config file: seed the base one if the slice-poller hasn't written it yet.
+        # The directory is opened up so the (non-root) slice-poller can replace the file.
+        - name: seed-config
+          image: "{{ .Values.prober.image.repository }}:{{ .Values.prober.image.tag }}"
+          imagePullPolicy: {{ .Values.prober.image.pullPolicy }}
+          command: ["sh", "-c", "[ -f /config/network_exporter.yml ] || cp /base/network_exporter.yml /config/network_exporter.yml; chmod 0777 /config"]
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: base
+              mountPath: /base
+      containers:
+        - name: prober
+          image: "{{ .Values.prober.image.repository }}:{{ .Values.prober.image.tag }}"
+          imagePullPolicy: {{ .Values.prober.image.pullPolicy }}
+          # config reloaded every conf.refresh, so the slice-poller never has to talk to the prober
+          command:
+            - /app/network_exporter
+            - --config.file=/config/network_exporter.yml
+            - --web.listen-address=:{{ .Values.prober.port }}
+          securityContext:
+            capabilities:
+              add: ["NET_RAW", "NET_ADMIN"]
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.prober.port }}
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          resources:
+            {{- toYaml .Values.prober.resources | nindent 12 }}
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: {{ include "slice-monitoring.componentName" $prober }}-config
+        - name: base
+          configMap:
+            name: {{ include "slice-monitoring.componentName" $prober }}-base

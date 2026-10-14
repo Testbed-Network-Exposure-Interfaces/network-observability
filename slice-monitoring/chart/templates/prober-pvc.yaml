@@ -1,0 +1,18 @@
+{{- $prober := dict "ctx" . "component" "prober" }}
+# Shared by the prober (reads) and the slice-poller (writes). ReadWriteOnce: both pods run on the same node.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "slice-monitoring.componentName" $prober }}-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "slice-monitoring.labels" $prober | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.prober.storage.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.prober.storage.size }}

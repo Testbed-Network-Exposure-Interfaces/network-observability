@@ -1,0 +1,69 @@
+namespace: slice-monitoring
+
+sliceId: ""
+
+slicePoller:
+  sliceManagerSecret: "slice-manager-secret"
+  image:
+    repository: "ghcr.io/migas77/slice-poller"
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  pollIntervalSeconds: 30
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+prober:
+  image:
+    repository: syepes/network_exporter
+    tag: "1.8.0"
+    pullPolicy: IfNotPresent
+  port: 9427
+  # Pings leave from wherever the pod runs: it must be able to reach the slice UEs.
+  # With hostNetwork every slice's prober on the same node needs a different port.
+  hostNetwork: false
+  nodeSelector: {}
+  # Optional, must be an IP configured on one of the pod's (or node's, with hostNetwork) interfaces
+  sourceIp: ""
+  # Only these UEs are probed (one ICMP target each, resolved to their IP by the slice-poller). Empty: no targets.
+  # Must be quoted strings, unquoted IMSIs lose their leading zeros.
+  probeIMSIs: []
+  # network_exporter settings - targets are written by the slice-poller
+  config:
+    conf:
+      refresh: 15s
+    icmp:
+      interval: 1s
+      timeout: 800ms
+      count: 6
+      payload_size: 56
+  storage:
+    size: 10Mi
+    storageClassName: ""
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+grafana:
+  image:
+    repository: grafana/grafana
+    # >= 12 is required for the dashboard.grafana.app/v1 API used by the slice-poller
+    tag: "12.4.13"
+    pullPolicy: IfNotPresent
+  port: 3000
+  datasourcesConfigMap: "grafana-datasources"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

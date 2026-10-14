@@ -1,0 +1,63 @@
+{{- $grafana := dict "ctx" . "component" "grafana" }}
+{{- $url := printf "http://%s:%v" (include "slice-monitoring.componentName" $grafana) .Values.grafana.port }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "slice-monitoring.componentName" $grafana }}-create-user
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "slice-monitoring.labels" $grafana | nindent 4 }}
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-grafana
+          image: curlimages/curl:8.18.0
+          command: ["sh", "-c", "until curl -sf {{ $url }}/api/health; do echo 'Grafana not ready.'; sleep 5; done"]
+      containers:
+        - name: create-additional-grafana-user
+          image: curlimages/curl:8.18.0
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+
+              RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
+                {{ $url }}/api/admin/users \
+                -u admin:admin \
+                -H "Content-Type: application/json" \
+                -d "{
+                \"login\": \"${GRAFANA_EXTRA_USERNAME}\",
+                \"password\": \"${GRAFANA_EXTRA_PASSWORD}\"
+              }")
+
+              HTTP_CODE="$RESPONSE"
+              BODY=$(cat /tmp/response.json)
+
+              if [ "$HTTP_CODE" = "200" ]; then
+                USER_ID=$(echo "$BODY" | grep -o '"id":[0-9]*' | grep -o '[0-9]*')
+
+                curl -sf -X PATCH "{{ $url }}/api/org/users/${USER_ID}" \
+                  -u admin:admin \
+                  -H "Content-Type: application/json" \
+                  -d '{"role": "Editor"}' \
+                && echo "Applied Editor Role"
+
+              else
+                echo "Failed to create user (HTTP $HTTP_CODE): $BODY" >&2
+                exit 1
+              fi
+          env:
+            - name: GRAFANA_EXTRA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "slice-monitoring.componentName" $grafana }}-user
+                  key: username
+            - name: GRAFANA_EXTRA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "slice-monitoring.componentName" $grafana }}-user
+                  key: password
+      restartPolicy: Never
+  backoffLimit: 0

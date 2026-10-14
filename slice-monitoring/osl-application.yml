@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: slice-monitoring-%s
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: ghcr.io/migas77
+    chart: slice-monitoring
+    targetRevision: 0.1.0
+    helm:
+      values: |
+        sliceId: %s
+        prober:
+          # Quoted strings; empty list means no prober targets
+          probeIMSIs: %s
+          config:
+            icmp:
+              // defaults: 1s, 800ms, 6, 56
+              interval: %s
+              timeout: %s
+              count: %s
+              payload_size: %s
+        grafana:
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: slice-monitoring
+  # Argo CD renders a new Grafana user password every time (lookup is empty without cluster access), but it is
+  # only applied on the first sync when the Secret is created. Later syncs keep the live password.
+  ignoreDifferences:
+    - kind: Secret
+      jsonPointers:
+        - /data/password
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
