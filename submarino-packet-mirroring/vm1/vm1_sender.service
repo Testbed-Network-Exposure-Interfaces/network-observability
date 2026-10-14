@@ -1,0 +1,22 @@
+[Unit]
+Description=Packet Sender to destination VM
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+User=packet-sender
+AmbientCapabilities=CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_RAW
+ExecStart=/usr/local/bin/vm1_sender.sh
+Environment="IFACE="
+Environment="DEST_HOST="
+Environment="DEST_PORT="
+Environment="RETRY_INTERVAL="
+
+[Install]
+WantedBy=multi-user.target

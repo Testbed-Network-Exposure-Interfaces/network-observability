@@ -1,0 +1,25 @@
+[Unit]
+Description=Packet Receiver and TAP Injector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+User=packet-receiver
+AmbientCapabilities=CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_RAW
+ExecStart=/usr/local/bin/mrecv/vm2_receiver.sh
+ExecStartPre=/bin/test -f /usr/local/bin/mrecv/venv/bin/python
+ExecStartPre=/usr/local/bin/mrecv/venv/bin/python -c "import scapy"
+Environment="TAP_DEV="
+Environment="LISTEN_PORT="
+Environment="VENV_PY_PATH=/usr/local/bin/mrecv/venv/bin/python"
+Environment="INJECT_SCRIPT=/usr/local/bin/mrecv/inject_scapy.py"
+Environment="RETRY_INTERVAL=10"
+
+[Install]
+WantedBy=multi-user.target
