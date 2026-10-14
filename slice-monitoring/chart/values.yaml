@@ -6,7 +6,7 @@ slicePoller:
   sliceManagerSecret: "slice-manager-secret"
   image:
     repository: "ghcr.io/migas77/slice-poller"
-    tag: "0.1.0"
+    tag: "0.1.1"
     pullPolicy: IfNotPresent
   pollIntervalSeconds: 30
   resources:
@@ -60,6 +60,13 @@ grafana:
     pullPolicy: IfNotPresent
   port: 3000
   datasourcesConfigMap: "grafana-datasources"
+  # Grafana is reachable at http://<ingress address><pathPrefix>/<sliceId>/
+  ingress:
+    enabled: true
+    className: nginx
+    # Empty: any host (e.g. http://<node ip>:<ingress-nginx http nodePort>)
+    host: ""
+    pathPrefix: /slice-monitoring
   resources:
     requests:
       cpu: 100m

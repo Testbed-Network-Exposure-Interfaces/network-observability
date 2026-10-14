@@ -1,0 +1,29 @@
+{{- if .Values.grafana.ingress.enabled }}
+{{- $grafana := dict "ctx" . "component" "grafana" }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "slice-monitoring.componentName" $grafana }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "slice-monitoring.labels" $grafana | nindent 4 }}
+  annotations:
+    # <path>/foo is forwarded to Grafana as /foo
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: {{ .Values.grafana.ingress.className }}
+  rules:
+    - {{- with .Values.grafana.ingress.host }}
+      host: {{ . }}
+      {{- end }}
+      http:
+        paths:
+          - path: {{ include "slice-monitoring.grafanaPath" . }}(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "slice-monitoring.componentName" $grafana }}
+                port:
+                  name: http
+{{- end }}

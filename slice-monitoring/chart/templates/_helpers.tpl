@@ -58,3 +58,10 @@ app.kubernetes.io/version: {{ .ctx.Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .ctx.Release.Service }}
 slice-monitoring/slice-id: {{ .ctx.Values.sliceId | quote }}
 {{- end }}
+
+{{/*
+External URL path of the slice Grafana, e.g. /slice-monitoring/<sliceId>
+*/}}
+{{- define "slice-monitoring.grafanaPath" -}}
+{{- printf "%s/%s" (trimSuffix "/" .Values.grafana.ingress.pathPrefix) (toString .Values.sliceId) }}
+{{- end }}

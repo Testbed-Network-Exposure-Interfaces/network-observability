@@ -15,7 +15,8 @@
         "query": "",
         "current": { "selected": false, "text": "", "value": "" },
         "options": [],
-        "hide": 0
+        "hide": 0,
+        "skipUrlSync": true
       },
       {
         "name": "UE_IPS",
@@ -24,7 +25,8 @@
         "query": "",
         "current": { "selected": false, "text": "", "value": "" },
         "options": [],
-        "hide": 0
+        "hide": 0,
+        "skipUrlSync": true
       }
     ]
   },

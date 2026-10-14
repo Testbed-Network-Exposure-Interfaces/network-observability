@@ -28,6 +28,11 @@ spec:
           env:
             - name: GF_SECURITY_ADMIN_PASSWORD
               value: "admin"
+            {{- if .Values.grafana.ingress.enabled }}
+            # Grafana's links and redirects must include the ingress path
+            - name: GF_SERVER_ROOT_URL
+              value: "%(protocol)s://%(domain)s:%(http_port)s{{ include "slice-monitoring.grafanaPath" . }}/"
+            {{- end }}
           readinessProbe:
             httpGet:
               path: /api/health
