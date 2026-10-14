@@ -19,7 +19,7 @@ spec:
           probeIMSIs: %s
           config:
             icmp:
-              // defaults: 1s, 800ms, 6, 56
+              # defaults: 1s, 800ms, 6, 56
               interval: %s
               timeout: %s
               count: %s
