@@ -49,11 +49,11 @@ data:
         static_configs:
           - targets: ['localhost:9090']
     
-      - job_name: 'throughput1'
+      - job_name: 'throughput-exporter-5g-atnog'
         static_configs:
           - targets: ['10.255.27.60:9200']
     
-      - job_name: 'throughput2'
+      - job_name: 'throughput-exporter-5g-bbu'
         static_configs:
           - targets: [ '10.255.27.60:9201' ]
     

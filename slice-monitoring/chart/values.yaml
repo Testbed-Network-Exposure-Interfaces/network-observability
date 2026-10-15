@@ -6,7 +6,7 @@ slicePoller:
   sliceManagerSecret: "slice-manager-secret"
   image:
     repository: "ghcr.io/migas77/slice-poller"
-    tag: "0.1.1"
+    tag: "0.1.2"
     pullPolicy: IfNotPresent
   pollIntervalSeconds: 30
   resources:

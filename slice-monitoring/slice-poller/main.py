@@ -17,21 +17,58 @@ signal.signal(signal.SIGINT, lambda *_: _shutdown.set())
 DASHBOARD_API_VERSION = "dashboard.grafana.app/v1beta1"
 
 
-def fetch_ue_ips(slice_id: str, api_url: str, auth: HTTPBasicAuth) -> dict[str, str] | None:
-    """Static IPv4 of each UE associated with the slice, keyed by ue_id (IMSI). UEs without one are left out."""
+def fetch_slice_imsis(slice_id: str, base_url: str, auth: HTTPBasicAuth) -> list[str] | None:
+    """IMSI (ue_id) of each UE associated with the slice, sorted and without duplicates."""
+    api_url = f"{base_url}/core/slices/{slice_id}/ues"
     logger.info("GET %s [slice_id=%s]", api_url, slice_id)
     try:
         r = requests.get(api_url, auth=auth, timeout=10)
         r.raise_for_status()
-        ue_ips = {}
+        imsis = set()
         for assoc in r.json()["associations"]:
-            ue_id, ip = assoc.get("ue_id"), assoc.get("static_ipv4_address")
-            if assoc.get("slice_id") == slice_id and ip and ue_id not in ue_ips:
-                ue_ips[ue_id] = ip
-        return dict(sorted(ue_ips.items()))  # stable order: unchanged associations never rewrite the config/dashboards
+            ue_id = assoc.get("ue_id")
+            if assoc.get("slice_id") == slice_id and ue_id:
+                imsis.add(ue_id)
+        return sorted(imsis)  # stable order: unchanged associations never rewrite the config/dashboards
     except (requests.RequestException, ValueError, KeyError, TypeError, AttributeError) as e:
         logger.error("Failed to fetch slice UEs [slice_id=%s]: %s", slice_id, e)
         return None
+
+
+class NoPduSession(Exception):
+    """The UE has no PDU session in the core (e.g. it is not attached), so it has no IP."""
+
+
+def fetch_ue_ip(imsi: str, base_url: str, auth: HTTPBasicAuth) -> str:
+    """Current IP of the UE, taken from its PDU session in the SMF. Raises NoPduSession if it has none."""
+    api_url = f"{base_url}/core/ues/{imsi}/user-plane-info"
+    r = requests.get(api_url, params={"detailed": "true"}, auth=auth, timeout=10)
+    if r.status_code == 404:
+        raise NoPduSession(imsi)
+    r.raise_for_status()
+    ip = r.json()["pdu_session"].get("user_ip")
+    if not ip:
+        raise NoPduSession(imsi)
+    return ip
+
+
+def fetch_ue_ips(slice_id: str, base_url: str, auth: HTTPBasicAuth) -> dict[str, str] | None:
+    """Current IP of each UE associated with the slice, keyed by IMSI. UEs without a PDU session are left out.
+    Returns None if any lookup fails, so a transient error never drops a UE from the config/dashboards."""
+    imsis = fetch_slice_imsis(slice_id, base_url, auth)
+    if imsis is None:
+        return None
+
+    ue_ips = {}
+    for imsi in imsis:
+        try:
+            ue_ips[imsi] = fetch_ue_ip(imsi, base_url, auth)
+        except NoPduSession:
+            logger.info("UE %s has no PDU session, skipped [slice_id=%s]", imsi, slice_id)
+        except (requests.RequestException, ValueError, KeyError, TypeError, AttributeError) as e:
+            logger.error("Failed to fetch IP of UE %s [slice_id=%s]: %s", imsi, slice_id, e)
+            return None
+    return ue_ips
 
 
 # ---------------------------------------------------------------- prober config
@@ -43,7 +80,7 @@ def select_probed_ues(ue_ips: dict[str, str], probe_imsis: list[str], slice_id: 
         if imsi in ue_ips:
             probed_ue_ips[imsi] = ue_ips[imsi]
         else:
-            logger.warning("IMSI %s not in the slice or without a static IP, not probed [slice_id=%s]", imsi, slice_id)
+            logger.warning("IMSI %s not in the slice or without a PDU session, not probed [slice_id=%s]", imsi, slice_id)
     return probed_ue_ips
 
 
@@ -163,7 +200,7 @@ def main():
     interval = int(os.getenv("POLL_INTERVAL_SECONDS"))
     slice_id = os.getenv("SLICE_ID")
 
-    slice_manager_api = f"{os.getenv('SLICE_MANAGER_URL').rstrip('/')}/core/slices/{slice_id}/ues"
+    slice_manager_url = os.getenv("SLICE_MANAGER_URL").rstrip("/")
     slice_manager_auth = HTTPBasicAuth(os.getenv("SLICE_MANAGER_USERNAME"), os.getenv("SLICE_MANAGER_PASSWORD"))
 
     prober_base_config = Path(os.getenv("PROBER_BASE_CONFIG"))
@@ -178,8 +215,8 @@ def main():
                 interval, prober_config_path, probe_imsis or "none", dashboards_api, slice_id)
 
     while not _shutdown.is_set():
-        # 1. Static IP of every UE in the slice, keyed by IMSI
-        ue_ips = fetch_ue_ips(slice_id, slice_manager_api, slice_manager_auth)
+        # 1. Current IP (from the PDU session) of every UE in the slice, keyed by IMSI
+        ue_ips = fetch_ue_ips(slice_id, slice_manager_url, slice_manager_auth)
         if ue_ips is None:
             logger.warning("Could not fetch UE IPs [slice_id=%s], will retry after interval", slice_id)
         else:

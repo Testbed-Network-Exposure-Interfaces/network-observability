@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: ghcr.io/migas77
     chart: slice-monitoring
-    targetRevision: 0.1.5
+    targetRevision: 0.1.6
     helm:
       values: |
         sliceId: "%s"
