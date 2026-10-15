@@ -54,7 +54,7 @@ func capturePackets(iface string) {
 		src := ipLayer.NetworkFlow().Src().String()
 		dst := ipLayer.NetworkFlow().Dst().String()
 		proto := protoName(packet)
-		size := float64(len(packet.Data()))
+		size := float64(packet.Metadata().Length)
 
 		srcMAC, dstMAC := "unknown", "unknown"
 		if ll := packet.LinkLayer(); ll != nil {
