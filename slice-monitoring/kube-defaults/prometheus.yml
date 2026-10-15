@@ -51,11 +51,11 @@ data:
     
       - job_name: 'throughput1'
         static_configs:
-          - targets: ['10.255.32.22:9200']
+          - targets: ['10.255.27.60:9200']
     
       - job_name: 'throughput2'
         static_configs:
-          - targets: [ '10.255.32.22:9201' ]
+          - targets: [ '10.255.27.60:9201' ]
     
       # per-slice probers deployed by the slice-monitoring chart (RBAC in prometheus-rbac.yml)
       - job_name: 'slice-probers'
