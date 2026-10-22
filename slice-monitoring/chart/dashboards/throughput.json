@@ -1,0 +1,1007 @@
+{
+  "uid": "slice-throughput",
+  "title": "Throughput",
+  "description": "Slice-level throughput dashboard for tap_5g_atnog — uplink, downlink, total per slice and per UE comparison. All values in bps.",
+  "tags": [
+    "slice-monitoring"
+  ],
+  "editable": true,
+  "schemaVersion": 36,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "UE_IPS",
+        "label": "UE IPs",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "options": [],
+        "hide": 0,
+        "skipUrlSync": true
+      },
+      {
+        "name": "rate_window",
+        "label": "Rate window",
+        "description": "Window of rate() over the byte counters (e.g. 4s, 30s, 1m). Needs at least 2 scrapes: >= 2x the Prometheus scrape interval (1s)",
+        "type": "textbox",
+        "query": "3s",
+        "current": {
+          "selected": false,
+          "text": "3s",
+          "value": "3s"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "3s",
+            "value": "3s"
+          }
+        ],
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 200,
+      "title": "🌐 Slice Overview — Total UL + DL",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bps",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Slice Total Throughput",
+      "description": "Sum of uplink + downlink across all UEs in the slice",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * (\n  sum(rate(tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))\n  +\n  sum(rate(tap_5g_atnog_throughput_bytes_total{dst_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))\n)",
+          "legendFormat": "Total",
+          "refId": "A"
+        }
+      ],
+      "interval": "1s"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bps",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Slice Uplink Throughput",
+      "description": "Sum of uplink (UE as src_ip) across all UEs in the slice",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * sum(rate(tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))",
+          "legendFormat": "Uplink",
+          "refId": "A"
+        }
+      ],
+      "interval": "1s"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bps",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Slice Downlink Throughput",
+      "description": "Sum of downlink (UE as dst_ip) across all UEs in the slice",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * sum(rate(tap_5g_atnog_throughput_bytes_total{dst_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))",
+          "legendFormat": "Downlink",
+          "refId": "A"
+        }
+      ],
+      "interval": "1s"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Active UEs in Slice",
+      "description": "Number of UEs currently reporting traffic",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "count(count by (src_ip) (tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}))",
+          "legendFormat": "UEs",
+          "refId": "A"
+        }
+      ],
+      "interval": "1s"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 201,
+      "title": "📈 Slice Throughput Over Time",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "bps",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Uplink"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Downlink"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "mean",
+            "max",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Slice Total / Uplink / Downlink — bps",
+      "description": "Uplink = UE as src_ip. Downlink = UE as dst_ip. Total = UL + DL.",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * (\n  sum(rate(tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))\n  +\n  sum(rate(tap_5g_atnog_throughput_bytes_total{dst_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))\n)",
+          "legendFormat": "Total",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * sum(rate(tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))",
+          "legendFormat": "Uplink",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * sum(rate(tap_5g_atnog_throughput_bytes_total{dst_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))",
+          "legendFormat": "Downlink",
+          "refId": "C"
+        }
+      ],
+      "interval": "1s"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 202,
+      "title": "👥 Per-UE Throughput Comparison",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "bps",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "mean",
+            "max",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Per-UE Uplink — bps",
+      "description": "Uplink throughput per UE (UE IP as src_ip)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * sum by (src_ip) (rate(tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))",
+          "legendFormat": "UE {{src_ip}} ↑",
+          "refId": "A"
+        }
+      ],
+      "interval": "1s"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "bps",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "mean",
+            "max",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Per-UE Downlink — bps",
+      "description": "Downlink throughput per UE (UE IP as dst_ip)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * sum by (dst_ip) (rate(tap_5g_atnog_throughput_bytes_total{dst_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))",
+          "legendFormat": "UE {{dst_ip}} ↓",
+          "refId": "A"
+        }
+      ],
+      "interval": "1s"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "bps",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "mean",
+            "max",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Per-UE Total Throughput (UL + DL) — bps",
+      "description": "Combined uplink + downlink per UE",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * (\n  sum by (src_ip) (rate(tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))\n  +\n  sum by (src_ip) (label_replace(\n    sum by (dst_ip) (rate(tap_5g_atnog_throughput_bytes_total{dst_ip=~\"${UE_IPS:raw}\"}[${rate_window}])),\n    \"src_ip\", \"$1\", \"dst_ip\", \"(.*)\"\n  ))\n)",
+          "legendFormat": "UE {{src_ip}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * (\n  sum(rate(tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))\n  +\n  sum(rate(tap_5g_atnog_throughput_bytes_total{dst_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))\n)",
+          "legendFormat": "Slice Total",
+          "refId": "B"
+        }
+      ],
+      "interval": "1s"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "id": 203,
+      "title": "📊 UE Comparison — Snapshot",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "unit": "bps",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 36
+      },
+      "id": 9,
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.6,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "title": "UE Uplink Comparison (current) — bps",
+      "type": "barchart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * sum by (src_ip) (rate(tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))",
+          "legendFormat": "{{src_ip}} ↑",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "interval": "1s"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "unit": "bps",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 36
+      },
+      "id": 10,
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.6,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "title": "UE Downlink Comparison (current) — bps",
+      "type": "barchart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * sum by (dst_ip) (rate(tap_5g_atnog_throughput_bytes_total{dst_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))",
+          "legendFormat": "{{dst_ip}} ↓",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "interval": "1s"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusDataSource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "unit": "bps",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 36
+      },
+      "id": 12,
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.6,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "title": "UE Total Comparison (current) — bps",
+      "type": "barchart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * (\n  sum by (src_ip) (rate(tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))\n  +\n  sum by (src_ip) (label_replace(\n    sum by (dst_ip) (rate(tap_5g_atnog_throughput_bytes_total{dst_ip=~\"${UE_IPS:raw}\"}[${rate_window}])),\n    \"src_ip\", \"$1\", \"dst_ip\", \"(.*)\"\n  ))\n)",
+          "legendFormat": "{{src_ip}}",
+          "refId": "A",
+          "instant": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusDataSource"
+          },
+          "expr": "8 * (\n  sum(rate(tap_5g_atnog_throughput_bytes_total{src_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))\n  +\n  sum(rate(tap_5g_atnog_throughput_bytes_total{dst_ip=~\"${UE_IPS:raw}\"}[${rate_window}]))\n)",
+          "legendFormat": "Slice Total",
+          "refId": "B",
+          "instant": true
+        }
+      ],
+      "interval": "1s"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "refresh": "10s",
+  "timepicker": {},
+  "timezone": "browser"
+}
