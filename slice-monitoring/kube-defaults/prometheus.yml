@@ -100,6 +100,7 @@ spec:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus"
             - "--web.enable-lifecycle"
+            - "--web.enable-admin-api"
             - "--storage.tsdb.retention.time=90d"
             - "--storage.tsdb.retention.size=18GB"
           ports:
