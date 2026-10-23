@@ -102,7 +102,7 @@ spec:
             - "--web.enable-lifecycle"
             - "--web.enable-admin-api"
             - "--storage.tsdb.retention.time=90d"
-            - "--storage.tsdb.retention.size=18GB"
+            - "--storage.tsdb.retention.size=38GB"
           ports:
             - name: http
               containerPort: 9090
@@ -130,4 +130,4 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 20Gi
+            storage: 40Gi
